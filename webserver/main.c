@@ -19,14 +19,13 @@ int main(/*int argc, char ** argv*/ void)
 	printf ("Need an advice ?\n");
 	return 0;*/
 
-
-	while(1) {
-		client = accept(serveur, NULL, NULL );
-		if (client == -1)
-			perror("accept");
-		sleep(1000);
+	client = accept(serveur, NULL, NULL );
+	if (client == -1)
+		perror("accept");
+//	while(1) {
+		sleep(2);
 		write(client, message_bienvenue, strlen(message_bienvenue));
-	}
+//	}
 	return 0;
 }
 

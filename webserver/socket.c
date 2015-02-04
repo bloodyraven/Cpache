@@ -23,3 +23,12 @@ int creer_serveur(int port){
 		perror("Listen socket_serveur");
 	return socket_serveur;
 }
+
+int setsockopt(int fd, int SOL_SOCKET, int SO_REUSEADDR, const void *optval, socklen_t option_len) {
+	int optval = 1;
+	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+		perror("Can not set SO_REUSEADDR option");
+}
+
+
+
