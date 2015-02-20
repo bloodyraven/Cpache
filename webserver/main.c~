@@ -9,21 +9,15 @@ int main(/*int argc, char ** argv*/ void)
 {
 	int pid;
 	int client;
-	int tmp;
 	char buffer[256];
 	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur \n";
 	int serveur = creer_serveur(8080);
-
-
-	initialiser_signaux();
+	FILE* file;
 
 	while(1) {
+		initialiser_signaux();
 		if((client = accept(serveur, NULL, NULL)) == -1)
 			perror("accept");
-		printf("Client connecté\n");
-		sleep(2);
-		if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
-			perror("write");
 		pid = fork();
 		if(pid == -1) {
 			perror("fork");
@@ -32,16 +26,16 @@ int main(/*int argc, char ** argv*/ void)
 				if(close(client) == -1)
 					perror("close");
 			} else {
- 				while((tmp = read(client, buffer, sizeof(buffer)))) {
-
- 					if(write(fd,buffer,strlen(buffer)) == -1 )
- 						perror("write");
+				printf("Client connecté\n");
+				sleep(2);
+					if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
+						perror("write");
+				file = fdopen(pid,"w+");
+	 			while(fgets(buffer, sizeof(buffer), file) != NULL) {
+					fprintf(file, "<Cpache> %s",buffer);
 				}
- 			
- 				if(tmp == -1)
- 					perror("read");
-
 				printf("Client deconnecté\n");
+				fclose(file);
 			}
  		}
 	}

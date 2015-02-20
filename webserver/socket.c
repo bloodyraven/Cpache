@@ -26,7 +26,7 @@ int creer_serveur(int port) {
 		perror("setsockopt");
 
 	if((bind_serveur = bind(socket_serveur, (struct sockaddr *)&sockaddr, sizeof(sockaddr))) == -1)
-		perror("bind socker_serveur");
+		perror("bind socket_serveur");
 
 	if(listen(socket_serveur, 10) == -1)
 		perror("Listen socket_serveur");
