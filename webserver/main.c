@@ -15,7 +15,6 @@ int main(/*int argc, char ** argv*/ void)
 	FILE* file;
 
 	while(1) {
-		initialiser_signaux();
 		if((client = accept(serveur, NULL, NULL)) == -1)
 			perror("accept");
 		pid = fork();
@@ -23,6 +22,7 @@ int main(/*int argc, char ** argv*/ void)
 			perror("fork");
 		} else {
 			if(pid != 0) {
+				initialiser_signaux();
 				if(close(client) == -1)
 					perror("close");
 			} else {

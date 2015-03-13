@@ -15,7 +15,6 @@ int main(/*int argc, char ** argv*/ void)
 	FILE* file;
 
 	while(1) {
-		initialiser_signaux();
 		if((client = accept(serveur, NULL, NULL)) == -1)
 			perror("accept");
 		pid = fork();
@@ -30,7 +29,7 @@ int main(/*int argc, char ** argv*/ void)
 				sleep(2);
 					if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
 						perror("write");
-				file = fdopen(pid,"w+");
+				file = fdopen(client,"w+");
 	 			while(fgets(buffer, sizeof(buffer), file) != NULL) {
 					fprintf(file, "<Cpache> %s",buffer);
 				}
