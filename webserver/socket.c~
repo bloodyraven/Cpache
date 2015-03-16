@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h>
 
 
 int creer_serveur(int port) {
@@ -47,5 +48,43 @@ void initialiser_signaux(void) {
 	sa.sa_flags = SA_RESTART;
 	if(sigaction(SIGCHLD, &sa, NULL) == -1)
 		perror("sigaction (SIGCHLD)");
+}
+
+int analyse(char buffer[],char *get, char *path,int *versionMaj,int *versionMin) {
+	if((sscanf(buffer, "%s %s HTTP/%d.%d", get, path, versionMaj, versionMin))==-1) {
+ 		perror("scanf");
+ 		return -1;
+ 	}
+ 		
+ 	if(strcmp(get, "GET")!=0) {
+ 		return -1;
+ 	}
+ 
+ 	/*if (strcmp(path,"/")!=0){
+ 		tmp = -1;
+ 	}*/
+ 
+ 	if(*versionMaj == 1) {
+		*versionMaj =-1;
+ 	} else {
+ 		return -1;
+ 	}
+ 
+ 	if(*versionMin != -1 && (*versionMin == 1 || *versionMin == 0)) {
+		*versionMin =-1;
+ 	} else {
+ 		return -1;
+ 	}
+ 	return 0;
+}
+
+void ligneVide(char *str) {	
+	while(*str != '\0') {
+		if(*str == '\r' || *str == '\n') {
+			*str ='\0';
+			break;
+		}
+		str++;
+	}
 }
 

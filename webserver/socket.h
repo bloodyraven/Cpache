@@ -9,4 +9,6 @@ socket créée . */
 
 int creer_serveur (int port);
 void initialiser_signaux(void);
+void ligneVide(char *str);
+int analyse(char buffer[], char *get, char *path, int *versionMaj, int *versionMin);
 # endif
