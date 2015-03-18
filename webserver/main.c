@@ -13,7 +13,7 @@ int main(/*int argc, char ** argv*/ void)
 	char get[256];
  	char path[512];
  	int versionMaj = -1, versionMin = -1;
-	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur \n";
+	//const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur \n";
 	int serveur = creer_serveur(8080);
 	FILE* file = NULL;
 
@@ -30,9 +30,9 @@ int main(/*int argc, char ** argv*/ void)
 					perror("close");
 			} else {
 				printf("Client connecté\n");
-				sleep(2);
+				/*sleep(2);
 				if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
-					perror("write");
+					perror("write");*/
 				file = fdopen(client,"w+");
 				/*ligneVide(buffer);
 				fgets(buffer, sizeof(buffer), file);
@@ -40,9 +40,9 @@ int main(/*int argc, char ** argv*/ void)
 	 			while(fgets(buffer, sizeof(buffer), file) != NULL) {
 					//fprintf(file, "<Cpache> %s", buffer);
 					if(analyse(buffer, get, path, &versionMaj, &versionMin) == -1) {
-						fprintf(file,"HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 16\r\n\r\n400 Bad request\n");
+						fprintf(file,"HTTP/1.1 404 Not found\r\nConnection: close\r\nContent-Length: 16\r\n");
 					} else {
-						fprintf(file,"HTTP/1.1 200 Good Request\r\nConnection: close\r\nContent-Length: 17\r\n\r\n200 good request\n");
+						fprintf(file,"HTTP/1.1 200 Good Request\r\nConnection: close\r\nContent-Length: 17\r\n");
 						fprintf(file,"Bienvenue sur Cpache ! \n");
 					}
 				}
