@@ -1,0 +1,262 @@
+commit e9671589d67a8d481154494f0f55674136e8f94d
+Author: Maximilien DEROO <maximilien.deroo@etudiant.univ-lille1.fr>
+Date:   Wed Feb 11 11:54:37 2015 +0100
+
+    Question 4.3.1
+
+diff --git a/webserver/Cpache b/webserver/Cpache
+index b98dbcd..467fc08 100755
+Binary files a/webserver/Cpache and b/webserver/Cpache differ
+diff --git a/webserver/main.c b/webserver/main.c
+index 79fff2b..b061bd9 100644
+--- a/webserver/main.c
++++ b/webserver/main.c
+@@ -7,25 +7,44 @@
+ 
+ int main(/*int argc, char ** argv*/ void)
+ {
++	int pid;
+ 	int client;
+-	int serveur = creer_serveur(8080);
++	int tmp;
++	char buffer[256];
+ 	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur \n";
++	int serveur = creer_serveur(8080);
+ 
+-	/* Arnold Robbins in the LJ of February ’95 , describing RCS
+-	if ( argc > 1 && strcmp ( argv [1] , "-advice" ) == 0) {
+-		printf ("Don't Panic !\n");
+-	return 42;
+-	}
+-	printf ("Need an advice ?\n");
+-	return 0;*/
+ 
+-	client = accept(serveur, NULL, NULL );
+-	if (client == -1)
+-		perror("accept");
+-//	while(1) {
++	initialiser_signaux();
++
++	while(1) {
++		if((client = accept(serveur, NULL, NULL)) == -1)
++			perror("accept");
++		printf("Client connecté\n");
+ 		sleep(2);
+-		write(client, message_bienvenue, strlen(message_bienvenue));
+-//	}
++		if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
++			perror("write");
++		pid = fork();
++		if(pid == -1) {
++			perror("fork");
++		} else {
++			if(pid != 0) {
++				if(close(client) == -1)
++					perror("close");
++			} else {
++ 				while((tmp = read(client, buffer, sizeof(buffer)))) {
++
++ 					if(write(client,buffer,strlen(buffer)) == -1 )
++ 						perror("write");
++				}
++ 			
++ 				if(tmp == -1)
++ 					perror("read");
++
++				printf("Client deconnecté\n");
++			}
++ 		}
++	}
+ 	return 0;
+ }
+ 
+diff --git a/webserver/main.c~ b/webserver/main.c~
+index 416b759..93c8ac3 100644
+--- a/webserver/main.c~
++++ b/webserver/main.c~
+@@ -7,24 +7,43 @@
+ 
+ int main(/*int argc, char ** argv*/ void)
+ {
++	int pid;
+ 	int client;
+-	int serveur = creer_serveur(8080);
++	int tmp;
++	char buffer[256];
+ 	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur \n";
++	int serveur = creer_serveur(8080);
+ 
+-	/* Arnold Robbins in the LJ of February ’95 , describing RCS
+-	if ( argc > 1 && strcmp ( argv [1] , "-advice" ) == 0) {
+-		printf ("Don't Panic !\n");
+-	return 42;
+-	}
+-	printf ("Need an advice ?\n");
+-	return 0;*/
+ 
+-	client = accept(serveur, NULL, NULL );
+-	if (client == -1)
+-		perror("accept");
++	initialiser_signaux();
++
+ 	while(1) {
++		if((client = accept(serveur, NULL, NULL)) == -1)
++			perror("accept");
++		printf("Client connecté\n");
+ 		sleep(2);
+-		write(client, message_bienvenue, strlen(message_bienvenue));
++		if(write(client, message_bienvenue, strlen(message_bienvenue)) == -1)
++			perror("write");
++		pid = fork();
++		if(pid == -1) {
++			perror("fork");
++		} else {
++			if(pid != 0) {
++				if(close(client) == -1)
++					perror("close");
++			} else {
++ 				while((tmp = read(client, buffer, sizeof(buffer)))) {
++
++ 					if(write(fd,buffer,strlen(buffer)) == -1 )
++ 						perror("write");
++				}
++ 			
++ 				if(tmp == -1)
++ 					perror("read");
++
++				printf("Client deconnecté\n");
++			}
++ 		}
+ 	}
+ 	return 0;
+ }
+diff --git a/webserver/main.o b/webserver/main.o
+index 6492fd6..0700ca8 100644
+Binary files a/webserver/main.o and b/webserver/main.o differ
+diff --git a/webserver/socket.c b/webserver/socket.c
+index fa097c8..843b805 100644
+--- a/webserver/socket.c
++++ b/webserver/socket.c
+@@ -3,32 +3,37 @@
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <stdio.h>
++#include <signal.h>
+ 
+-int creer_serveur(int port){
++int creer_serveur(int port) {
+ 	int socket_serveur;
+ 	int bind_serveur;
++	int optval = 1;
+ 
+ 	struct sockaddr_in sockaddr;
+ 	sockaddr.sin_family = AF_INET;
+ 	sockaddr.sin_port = htons(port);
+ 	sockaddr.sin_addr.s_addr = INADDR_ANY;
+ 	socket_serveur = socket (AF_INET, SOCK_STREAM, 0);
++
+ 	if(socket_serveur == -1)
+ 		perror("socket_serveur");
+ 
++	if(setsockopt(socket_serveur, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
++		perror("setsockopt");
++
+ 	if((bind_serveur = bind(socket_serveur, (struct sockaddr *)&sockaddr, sizeof(sockaddr))) == -1)
+ 		perror("bind socker_serveur");
+ 
+ 	if(listen(socket_serveur, 10) == -1)
+ 		perror("Listen socket_serveur");
++
++
+ 	return socket_serveur;
+ }
+ 
+-int setsockopt(int fd, int SOL_SOCKET, int SO_REUSEADDR, const void *optval, socklen_t option_len) {
+-	int optval = 1;
+-	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+-		perror("Can not set SO_REUSEADDR option");
++void initialiser_signaux(void) {
++	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
++		perror("signal");
+ }
+ 
+-
+-
+diff --git a/webserver/socket.c~ b/webserver/socket.c~
+index ea8df0e..a82546b 100644
+--- a/webserver/socket.c~
++++ b/webserver/socket.c~
+@@ -3,32 +3,37 @@
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <stdio.h>
++#include <signal.h>
+ 
+ int creer_serveur(int port){
+ 	int socket_serveur;
+ 	int bind_serveur;
++	int optval = 1;
+ 
+ 	struct sockaddr_in sockaddr;
+ 	sockaddr.sin_family = AF_INET;
+ 	sockaddr.sin_port = htons(port);
+ 	sockaddr.sin_addr.s_addr = INADDR_ANY;
+ 	socket_serveur = socket (AF_INET, SOCK_STREAM, 0);
++
+ 	if(socket_serveur == -1)
+ 		perror("socket_serveur");
+ 
++	if(setsockopt(socket_serveur, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
++		perror("setsockopt");
++
+ 	if((bind_serveur = bind(socket_serveur, (struct sockaddr *)&sockaddr, sizeof(sockaddr))) == -1)
+ 		perror("bind socker_serveur");
+ 
+ 	if(listen(socket_serveur, 10) == -1)
+ 		perror("Listen socket_serveur");
++
++
+ 	return socket_serveur;
+ }
+ 
+-int setsockopt(int fd, int SOL_SOCKET, int SO_REUSEADDR, const void * optval, socklen_t option_len) {
+-	int optval = 1;
+-	if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+-		perror("Can not set SO_REUSEADDR option");
++void initialiser_signaux(void){
++	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
++		perror("signal");
+ }
+ 
+-
+-
+diff --git a/webserver/socket.h b/webserver/socket.h
+index ad76a4d..dfc19d6 100644
+--- a/webserver/socket.h
++++ b/webserver/socket.h
+@@ -8,4 +8,5 @@ La fonction retourne -1 en cas d ’ erreur ou le descripteur de la
+ socket créée . */
+ 
+ int creer_serveur (int port);
++void initialiser_signaux(void);
+ # endif
+diff --git a/webserver/socket.h~ b/webserver/socket.h~
+new file mode 100644
+index 0000000..ad76a4d
+--- /dev/null
++++ b/webserver/socket.h~
+@@ -0,0 +1,11 @@
++# ifndef __SOCKET_H__
++# define __SOCKET_H__
++
++/** Crée une socket serveur qui écoute sur toute les interfaces IPv4
++de la machine sur le port passé en paramètre . La socket retournée
++doit pouvoir être utilisée directement par un appel à accept .
++La fonction retourne -1 en cas d ’ erreur ou le descripteur de la
++socket créée . */
++
++int creer_serveur (int port);
++# endif
+diff --git a/webserver/socket.o b/webserver/socket.o
+index 1fff90e..3723ba5 100644
+Binary files a/webserver/socket.o and b/webserver/socket.o differ

@@ -1,12 +1,13 @@
-#include "socket.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <string.h>
+ #include <arpa/inet.h>
+ #include <unistd.h>
+ #include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/wait.h>
+ #include "socket.h"
 
 
 int creer_serveur(int port) {
@@ -50,34 +51,6 @@ void initialiser_signaux(void) {
 		perror("sigaction (SIGCHLD)");
 }
 
-int analyse(char buffer[],char *get, char *path,int *versionMaj,int *versionMin) {
-	if((sscanf(buffer, "%s %s HTTP/%d.%d", get, path, versionMaj, versionMin))==-1) {
- 		perror("scanf");
- 		return -1;
- 	}
- 		
- 	if(strcmp(get, "GET")!=0) {
- 		return -1;
- 	}
- 
- 	/*if (strcmp(path,"/")!=0){
- 		tmp = -1;
- 	}*/
- 
- 	if(*versionMaj == 1) {
-		*versionMaj =-1;
- 	} else {
- 		return -1;
- 	}
- 
- 	if(*versionMin != -1 && (*versionMin == 1 || *versionMin == 0)) {
-		*versionMin =-1;
- 	} else {
- 		return -1;
- 	}
- 	return 0;
-}
-
 void ligneVide(char *str) {	
 	while(*str != '\0') {
 		if(*str == '\r' || *str == '\n') {
@@ -86,5 +59,60 @@ void ligneVide(char *str) {
 		}
 		str++;
 	}
+}
+
+char *fgets_or_exit(char *buffer, int size, FILE *file){
+ 	if(fgets(buffer, size, file) == NULL){
+ 		exit(1);
+ 	}
+ 	return buffer;	
+}
+
+int parse_http_request(const char *request_line, http_request *request) {
+ 	char get[50];
+
+ 	if((sscanf(request_line, "%s %s HTTP/%d.%d", get, request->url, &request->major_version, &request->minor_version)) != 4) {
+ 		perror("scanf");
+ 		return 0;
+ 	}
+
+ 	if(strcmp(get, "GET")==0) {
+ 		request->method = HTTP_GET;
+ 	} else {
+ 		return 0;
+ 	}
+ 		
+ 	if(strcmp(request->url,"/")! = 0)
+ 		return 0;
+ 
+ 	if (request->major_version != 1) {
+ 		request->method = HTTP_UNSUPPORTED;
+ 		return 0;
+ 	}
+ 	
+ 	if (!(request->minor_version != -1 && (request->minor_version == 1 || request->minor_version == 0))) {
+ 		request->method = HTTP_UNSUPPORTED;
+ 		return 0;
+ 	}
+ 
+ 	return 1;
+ }
+
+void skip_headers (FILE * fichier_client) {
+ 	char buffer[256];
+ 	while(fgets_or_exit(buffer, sizeof(buffer), fichier_client)) {
+ 		ligneVide((char*)buffer);
+ 		if(strlen(buffer) == 0)
+ 			break;
+ 	}
+ }
+
+void send_status(FILE * fichier_client, int code, const char * reason_phrase) {
+	fprintf(fichier_client, "HTTP/1.1 %d %s\r\n", code, reason_phrase);
+}
+ 
+void send_response(FILE *client, int code, const char *reason_phrase, const char *message_body) {
+	send_status(client, code, reason_phrase);
+	fprintf(client, "Connection: close\r\nContent-Length: %d\r\n\r\n%s", (int) strlen(message_body), message_body);
 }
 
