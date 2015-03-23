@@ -1,4 +1,3 @@
-#include "socket.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -8,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <string.h>
+#include "socket.h"
 
 
 int creer_serveur(int port) {
@@ -82,7 +82,7 @@ int parse_http_request(const char *request_line, http_request *request) {
  		return 0;
  	}
  		
- 	if(strcmp(request->url,"/")! = 0)
+ 	if(strcmp(request->url,"/") != 0)
  		return 0;
  
  	if (request->major_version != 1) {

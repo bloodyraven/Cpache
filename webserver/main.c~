@@ -1,53 +1,64 @@
-#include "socket.h"
-#include <stdlib.h>
-#include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
+#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include "socket.h"
 
 int main(/*int argc, char ** argv*/ void)
 {
+	int socket_serveur;
+	int optval = 1;
+	int fd = 0;
 	int pid;
-	int client;
-	char buffer[256];
-	//char get[256];
- 	//char path[512];
- 	http_request request;
-	int serveur = creer_serveur(8080);
-	FILE* file = NULL;
+	int tmp = 1;
+	char buffer[128];
+	http_request request;
+	FILE * fichier = NULL;
 
-	while(1) {
-		initialiser_signaux();
-		if((client = accept(serveur, NULL, NULL)) == -1)
-			perror("accept");
-		pid = fork();
-		if(pid == -1) {
-			perror("fork");
-		} else {
-			if(pid != 0) {
-				if(close(client) == -1)
-					perror("close");
-			} else {
-				printf("Client connecté\n");
-				file = fdopen(client,"w+");
-	 			fgets_or_exit(buffer, sizeof(buffer), file);
-				skip_headers(file);
-				if(parse_http_request(buffer, &request) == -1) {
-					fprintf(file,"HTTP/1.1 404 Not found\r\nConnection: close\r\nContent-Length: 16\r\n");
-				} else {
-					fprintf(file,"HTTP/1.1 200 Good Request\r\nConnection: close\r\nContent-Length: 17\r\n");
-					fprintf(file,"Bienvenue sur Cpache ! \n");
-				}
-			}
-				printf("Client deconnecté\n");
-				fclose(file);
-		
- 		}
+	
+	if(creer_serveur(&port) == -1){
+		perror("Erreur lors de la creation du serveur");
+		return -1;
 	}
+
+	initialiser_signaux();
+	while(1){
+		
+		
+			
+		if((fd=accept(socket_serveur,NULL,NULL))!=-1){
+			pid = fork();
+		} else {
+			perror("accept socket_serveur");
+			return -1;
+		}
+
+		if (pid ==0){
+			printf("%d Client connecte\n",pid  );
+			fichier=fdopen(fd,"w+");
+				
+			fgets_or_exit(buffer,sizeof(buffer),fichier);
+			tmp = parse_http_request(buffer, &request);
+			skip_headers(fichier);
+
+			if (tmp == 0)
+				send_response( fichier , 400, "Bad Request", "Bad request\r\n");
+			else if (request.method == HTTP_UNSUPPORTED){
+				send_response(fichier , 405, "Method Not Allowed", "Method Not Allowed\r\n");
+			}else if (strcmp(request.url, "/") == 0){
+				send_response(fichier , 200, "OK", "Good Request\r\n");
+			}else
+				send_response(fichier , 404, "Not Found", "Not Found\r\n");
+	 				
+			fclose(fichier);
+			exit(0);
+		}
+	}	
 	return 0;
 }
 
