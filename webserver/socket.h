@@ -28,5 +28,9 @@ void skip_headers (FILE *fichier_client);
 void send_status(FILE * fichier_client, int code, const char * reason_phrase);
 void send_response(FILE * client, int code, const char *reason_phrase, const char *message_body);
 char * fgets_or_exit(char *buffer, int size, FILE *file);
+int check_and_open(const char *url, const char *document_root);
+char *rewrite_url(char *url);
+int copy(int in, int out);
+
 
 # endif

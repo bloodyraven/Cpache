@@ -23,7 +23,6 @@ typedef struct
 int creer_serveur (int port);
 void initialiser_signaux(void);
 void ligneVide(char *str);
-
 int parse_http_request(const char *request_line, http_request *request);
 void skip_headers (FILE *fichier_client);
 void send_status(FILE * fichier_client, int code, const char * reason_phrase);

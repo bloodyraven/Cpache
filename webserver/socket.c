@@ -1,12 +1,14 @@
-#include <stdlib.h>
-#include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include "socket.h"
 
 
@@ -114,5 +116,67 @@ void send_status(FILE * fichier_client, int code, const char * reason_phrase) {
 void send_response(FILE *client, int code, const char *reason_phrase, const char *message_body) {
 	send_status(client, code, reason_phrase);
 	fprintf(client, "Connection: close\r\nContent-Length: %d\r\n\r\n%s", (int) strlen(message_body), message_body);
+}
+
+int check_and_open(const char *url, const char *document_root) {
+	char* tmp = malloc(strlen(url)+strlen(document_root)+1);
+	int fd;
+	struct stat buffer;
+	
+	strcpy(tmp,document_root);
+	strcat(tmp,url);
+	if(stat(tmp,&buffer) == -1) {
+		perror("stats");
+		return -1;
+	}
+
+	if(!S_ISREG(buffer.st_mode)){
+		perror("Pas un fichier régulier");
+		return -1;
+	}
+
+	if((fd=open(tmp,O_RDONLY)) == -1){
+		perror("open");
+		return -1;
+	}
+
+	return fd;
+}
+
+char *rewrite_url(char *url) {
+	int i = 0;
+	char *res = malloc(strlen(url));
+	while(url[i]!='\0' ) {		
+		if(url[i]=='?') {			
+			res[i]='\0';
+			return res;
+		}
+		res[i]=url[i];
+		i++;
+	}
+	return NULL;
+}
+
+int get_file_size(int fd) {
+	struct stat buffer;
+	if(fstat(fd,&buffer) == -1){
+		perror("stats");
+		return -1;
+	}
+	return buffer.st_size;
+}
+
+int copy(int in, int out) {
+	char *buffer = malloc(get_file_size(in));
+	if(read(in, buffer, get_file_size(in)) == -1){
+		perror("read");
+		return -1;
+	}
+	if(write(out, buffer, get_file_size(in)) == -1){
+		perror("write");
+		return -1;
+	}
+	close(in);
+	return 1;
 }
 
